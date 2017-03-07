@@ -11,12 +11,14 @@ SOURCES += main.cpp\
         mainwindow.cpp \
     tcpworker.cpp \
     graphwindow.cpp \
-    qcustomplot.cpp
+    qcustomplot.cpp \
+    datamanager.cpp
 
 HEADERS  += mainwindow.h \
     tcpworker.h \
     graphwindow.h \
-    qcustomplot.h
+    qcustomplot.h \
+    datamanager.h
 
 FORMS    += mainwindow.ui \
     graphwindow.ui

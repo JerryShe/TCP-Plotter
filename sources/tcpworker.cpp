@@ -60,7 +60,9 @@ void TcpWorker::socketError(QAbstractSocket::SocketError err)
     QObject * object = QObject::sender();
     if (!object)
         return;
+
     QTcpSocket * socket = static_cast<QTcpSocket *>(object);
+    qDebug()<<socket->errorString();
 
     emit connectionError(socket);
 }
