@@ -2,6 +2,7 @@
 #include "ui_mainwindow.h"
 
 #include "graphwindow.h"
+
 #include <QMdiSubWindow>
 #include <QMdiArea>
 #include <QMessageBox>
@@ -25,19 +26,32 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
     ui->tabWidget->setCornerWidget(newTabButton, Qt::TopLeftCorner);
     newTabButton->show();
 
-    NetworkThread = new QThread();
-    NetworkWorker = TcpWorker::getTcpWorker();
+    qDebug()<<"gui " << this->thread();
+
+
+
+    ManagerThread = new QThread(this);
+    connect(this, SIGNAL(destroyed(QObject*)), ManagerThread, SLOT(quit()));
+    Manager = DataManager::getDataManager();
+    Manager->moveToThread(ManagerThread);
+
+    NetworkThread = new QThread(this);
+    connect(this, SIGNAL(destroyed(QObject*)), NetworkThread, SLOT(quit()));
+    NetworkWorker = new TcpWorker(Manager);
     NetworkWorker->moveToThread(NetworkThread);
 
     NetworkThread->start();
-    NetworkWorker->start();
+    ManagerThread->start();
 
+
+    NetworkWorker->start(Manager);
     NetworkWorker->openPort("666");
     ui->logsList->addItem("Server started at port 666");
 
+
     connect(NetworkWorker, &TcpWorker::connectionDone, [this](QTcpSocket* socket){addNewConnection(socket, false);});
     connect(NetworkWorker, SIGNAL(newConnection(QTcpSocket*)), this, SLOT(incommingConnection(QTcpSocket*)));
-    connect(NetworkWorker, SIGNAL(disconnected(QTcpSocket*)), this, SLOT(deleteConnection(QTcpSocket*)));
+    connect(NetworkWorker, SIGNAL(disconnected(QStringList)), this, SLOT(deleteConnection(QStringList)));
 
     ui->IPLabel->setText(NetworkWorker->getLocalIP());
 }
@@ -45,10 +59,8 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
 
 MainWindow::~MainWindow()
 {
-    NetworkThread->quit();
     NetworkThread->wait();
-    delete NetworkThread;
-
+    ManagerThread->wait();
     delete ui;
 }
 
@@ -102,8 +114,6 @@ void MainWindow::addNewConnection(QTcpSocket *socket, const bool type)
     ui->connectionTable->setItem(0, 1, new QTableWidgetItem(socket->peerAddress().toString()));
     ui->connectionTable->setItem(0, 2, new QTableWidgetItem(QString::number(socket->peerPort())));
 
-    connectionList.append(socket);
-
     QColor rowColor;
     if (type)
         rowColor.setRgb(230,230,230);
@@ -117,20 +127,27 @@ void MainWindow::addNewConnection(QTcpSocket *socket, const bool type)
 }
 
 
-void MainWindow::deleteConnection(QTcpSocket *socket)
+void MainWindow::deleteConnection(QStringList socketData)
 {
-    int pos = connectionList.indexOf(socket);
+    int pos = -1;
+    //qDebug()<<socketData;
+    for (int i = 0; i < ui->connectionTable->rowCount(); i++)
+    {
+        if (//ui->connectionTable->item(i, 0)->text() == socketData[0] &&
+                ui->connectionTable->item(i, 1)->text() == socketData[1] &&
+                ui->connectionTable->item(i, 2)->text() == socketData[2])
+            pos = i;
+    }
+
     if (pos != -1)
     {
         ui->logsList->addItem("Disconnected with " + ui->connectionTable->item(pos,0)->text()
                               + " with IP: " + ui->connectionTable->item(pos,1)->text());
 
         ui->connectionTable->removeRow(pos);
-        socket->abort();
-        connectionList.removeAt(pos);
-        delete socket;
     }
 }
+
 
 
 void MainWindow::on_ConnectTo_clicked()

@@ -1,5 +1,6 @@
 #include "graphwindow.h"
 #include "ui_graphwindow.h"
+#include "devicemanagerwindow.h"
 
 #include <QColorDialog>
 #include <QDialog>
@@ -179,4 +180,9 @@ void GraphWindow::on_RangeSlider_valueChanged(int value)
         pos = 0;
 
     ui->graph->xAxis->setRange(pos, pos + ui->RangeBox->value());
+}
+
+void GraphWindow::on_AddGraphButton_clicked()
+{
+    DeviceManagerWindow* window = new DeviceManagerWindow(this);
 }

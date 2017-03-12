@@ -3,9 +3,12 @@
 
 #include <QMainWindow>
 #include <QThread>
-#include "tcpworker.h"
-
 #include <QTcpSocket>
+
+
+#include "tcpworker.h"
+#include "datamanager.h"
+
 
 
 namespace Ui {
@@ -27,17 +30,20 @@ private slots:
     void on_ChangePort_clicked();
 
     void addNewConnection(QTcpSocket *socket, const bool type);
-    void deleteConnection(QTcpSocket* socket);
+    void deleteConnection(QStringList socketData);
 
     void incommingConnection(QTcpSocket *socket);
     void on_ConnectTo_clicked();
 
 private:
     Ui::MainWindow *ui;
+
     QThread* NetworkThread;
     TcpWorker* NetworkWorker;
 
-    QList <QTcpSocket*> connectionList;
+    QThread* ManagerThread;
+    DataManager* Manager;
+
 };
 
 #endif // MAINWINDOW_H
