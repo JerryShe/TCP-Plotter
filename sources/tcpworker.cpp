@@ -7,14 +7,8 @@
 #include <QDataStream>
 #include <QAbstractSocket>
 
-TcpWorker *TcpWorker::getTcpWorker()
-{
-    static TcpWorker worker;
-    return &worker;
-}
 
-
-TcpWorker::TcpWorker()
+TcpWorker::TcpWorker(DataManager* manager)
 {
     qRegisterMetaType<QAbstractSocket::SocketError>();
     qRegisterMetaType<QVector<int>>();
@@ -22,8 +16,14 @@ TcpWorker::TcpWorker()
 
 
 TcpWorker::~TcpWorker()
-{
+{}
 
+
+void TcpWorker::start(DataManager* manager)
+{
+    dataManager = manager;
+    server = new QTcpServer();
+    connect(server, SIGNAL(newConnection()), this, SLOT(newConnectionFrom()));
 }
 
 
@@ -65,13 +65,6 @@ void TcpWorker::socketError(QAbstractSocket::SocketError err)
     qDebug()<<socket->errorString();
 
     emit connectionError(socket);
-}
-
-
-void TcpWorker::start()
-{
-    server = new QTcpServer();
-    connect(server, SIGNAL(newConnection()), this, SLOT(newConnectionFrom()));
 }
 
 
@@ -129,15 +122,21 @@ void TcpWorker::socketDisconnected()
         return;
 
     QTcpSocket * socket = static_cast<QTcpSocket *>(object);
-    emit disconnected(socket);
 
+
+    QStringList socketData;
+    socketData << socket->peerName() << socket->peerAddress().toString() << QString::number(socket->peerPort());
+    emit disconnected(socketData);
+    dataManager->deleteDevice(socket);
 
     int pos = socketList.indexOf(socket);
     if (pos != -1)
+    {
         socketList.removeAt(pos);
+    }
     else
     {
-        qDebug()<<"Huiston! U nas problemi! Socket proeban! Povtoryau, socket proeban!";
+        qDebug()<<"Huiston! U nas problemi! Socket poteryan! Povtoryau, socket poteryan!";
     }
 }
 
@@ -149,7 +148,7 @@ void TcpWorker::newConnectionTo(const QString &ip, const QString &port)
 
     connect(socket, SIGNAL(connected()), this, SLOT(newConnectionToDone()));
 
-    connect(socket, SIGNAL(readyRead()), this, SLOT(readyRead()));
+    connect(socket, SIGNAL(readyRead()), dataManager, SLOT(socketReadyRead()));
     connect(socket, SIGNAL(error(QAbstractSocket::SocketError)), this, SLOT(socketError(QAbstractSocket::SocketError)));
     connect(socket, SIGNAL(disconnected()), this, SLOT(socketDisconnected()));
 
@@ -168,28 +167,21 @@ void TcpWorker::newConnectionToDone()
 }
 
 
-
 void TcpWorker::newConnectionFrom()
 {
+    qDebug()<<"connecting";
     QTcpSocket * socket = server->nextPendingConnection();
-    connect(socket, SIGNAL(readyRead()), this, SLOT(readyRead()));
+
+    connect(socket, SIGNAL(readyRead()), dataManager, SLOT(socketReadyRead()));
     connect(socket, SIGNAL(error(QAbstractSocket::SocketError)), this, SLOT(socketError(QAbstractSocket::SocketError)));
     connect(socket, SIGNAL(disconnected()), this, SLOT(socketDisconnected()));
+
+    if (socket->bytesAvailable() > 0)
+        emit socket->readyRead();
 
     emit newConnection(socket);
 
     socketList.append(socket);
+
     qDebug()<<"connected";
-}
-
-
-void TcpWorker::readyRead()
-{
-    QObject * object = QObject::sender();
-    if (!object)
-        return;
-
-    QTcpSocket * socket = static_cast<QTcpSocket *>(object);
-    QByteArray arr =  socket->readAll();
-    qDebug()<<QString::fromUtf8(arr);
 }
