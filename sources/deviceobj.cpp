@@ -50,18 +50,17 @@ void DeviceObj::initialize()
     deviceDataStream >> size;
 
 
-    if (!deviceDataStream.commitTransaction())
-    {
-        return;
-    }
-
-
     for (unsigned char i = 1; i <= size; i++)
     {
-        StreamObj* strObj = new StreamObj(deviceSocket, i);
+        StreamObj* strObj = new StreamObj(deviceSocket, i, deviceDataStream);
 
         streamByName.insert(strObj->getStreamName(), strObj);
         streamByIndex.append(strObj);
+    }
+
+    if (!deviceDataStream.commitTransaction())
+    {
+        return;
     }
 
     qDebug()<<"device " << deviceName << "in thread " << this->thread();
@@ -104,7 +103,7 @@ void DeviceObj::receiveNewData()
         unsigned char streamIndex;
         deviceDataStream>>streamIndex;
 
-        streamByIndex[streamIndex]->receiveNewData(deviceName);
+        streamByIndex[streamIndex]->receiveNewData(deviceName, deviceDataStream);
     }
     else
     {

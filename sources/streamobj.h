@@ -4,6 +4,7 @@
 #include <QObject>
 #include <QTcpSocket>
 #include <QPair>
+#include <QDataStream>
 
 #include "informationstructs.h"
 
@@ -28,11 +29,11 @@ class StreamObj : public QObject
 
 public:
     StreamObj();
-    StreamObj(QTcpSocket* socket, unsigned char StreamIndex);
+    StreamObj(QTcpSocket* socket, unsigned char StreamIndex, QDataStream &dataStream);
     ~StreamObj();
 
 
-    void receiveNewData(const QString &deviceName);
+    void receiveNewData(const QString &deviceName, QDataStream &dataStream);
 
 
     QString getStreamName();

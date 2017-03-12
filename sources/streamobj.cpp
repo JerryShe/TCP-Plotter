@@ -19,60 +19,67 @@ void packet::addVar(double var)
 StreamObj::StreamObj()
 {}
 
-StreamObj::StreamObj(QTcpSocket* socket, unsigned char StreamIndex)
+StreamObj::StreamObj(QTcpSocket* socket, unsigned char StreamIndex, QDataStream &dataStream)
 {
     deviceSocket = socket;
     streamIndex = StreamIndex;
 
-    QDataStream in(socket);
 
     unsigned char strSize;
     QByteArray str;
 
-    in >> strSize;
+    dataStream >> strSize;
     if (strSize == 0)
     {
         ///невалидное имя
         return;
     }
     str.resize(strSize);
-    in >> str;
-    streamName.fromUtf8(str);
+    dataStream >> str;
+    streamName = QString::fromUtf8(str);
 
-    in >> strSize;
+    dataStream >> strSize;
     if (strSize != 0)
     {
         str.resize(strSize);
-        in >> str;
-        streamDescription.fromUtf8(str);
+        dataStream >> str;
+        streamDescription = QString::fromUtf8(str);
     }
 
 
-    in >> timeInterval;
+    dataStream >> timeInterval;
 
     unsigned char size;
-    in >> size;
+    dataStream >> size;
+    qDebug()<<dataStream.atEnd();
+    qDebug()<<"var size "<<size;
+
     for (int i = 0; i < size; i++)
     {
-        in >> strSize;
+        dataStream >> strSize;
         if (strSize == 0)
         {
             ///невалидное имя переменной
             return;
         }
         str.resize(strSize);
-        in >> str;
+        dataStream >> str;
         streamVariables.append(QString::fromUtf8(str));
 
 
-        in >> strSize;
+        dataStream >> strSize;
         if (strSize != 0)
         {
             str.resize(strSize);
-            in >> str;
+            dataStream >> str;
             streamVariablesDescription.append(QString::fromUtf8(str));
         }
     }
+
+    qDebug()<<streamName;
+    qDebug()<<streamDescription;
+    qDebug()<<streamVariables;
+    qDebug()<<streamVariablesDescription;
 }
 
 
@@ -82,15 +89,13 @@ StreamObj::~StreamObj()
 }
 
 
-void StreamObj::receiveNewData(const QString &deviceName)
+void StreamObj::receiveNewData(const QString &deviceName, QDataStream &dataStream)
 {
-    QDataStream in(deviceSocket);
-
     packet pack(deviceName);
 
     unsigned int time;
     if (timeInterval == 0)
-        in>>time;
+        dataStream>>time;
     else
         time += timeInterval;
 
@@ -100,7 +105,7 @@ void StreamObj::receiveNewData(const QString &deviceName)
     double temp;
     for (int i = 0; i < streamVariables.size(); i++)
     {
-        in>>temp;
+        dataStream>>temp;
         pack.addVar(temp);
     }
 
