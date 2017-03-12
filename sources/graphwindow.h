@@ -40,8 +40,6 @@ private slots:
     void on_GridTypeBox_activated(const QString &arg1);
 
 
-    void on_AddGraphButton_clicked();
-
 protected:
     bool eventFilter(QObject *watched, QEvent *event);
 

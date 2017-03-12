@@ -4,10 +4,8 @@
 #include <QObject>
 #include <QTcpServer>
 #include <QTcpSocket>
+
 #include <QMetaType>
-
-
-#include "datamanager.h"
 
 
 class TcpWorker : public QObject
@@ -15,16 +13,14 @@ class TcpWorker : public QObject
     Q_OBJECT
 
 public:
-    TcpWorker(DataManager* manager);
-    ~TcpWorker();
-
-    void start(DataManager* manager);
+    static TcpWorker* getTcpWorker();
+    void start();
 
     QString getLocalIP();
 
 signals:
     void connectionError(QTcpSocket* socket);
-    void disconnected(QStringList socketData);
+    void disconnected(QTcpSocket* socket);
     void newConnection(QTcpSocket* socket);
     void connectionDone(QTcpSocket* socket);
 
@@ -39,16 +35,19 @@ public slots:
 private slots:
     void newConnectionFrom();
     void newConnectionToDone();
+    void readyRead();
     void socketError(QAbstractSocket::SocketError);
     void socketDisconnected();
 
 
 
 private:
-    QTcpServer* server;
-    QVector<QTcpSocket*> socketList;
+    TcpWorker();
+    ~TcpWorker();
 
-    DataManager* dataManager;
+    QTcpServer* server;
+    QList <QTcpSocket*> socketList;
+
 };
 
 

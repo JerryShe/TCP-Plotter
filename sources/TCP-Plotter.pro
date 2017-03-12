@@ -12,22 +12,13 @@ SOURCES += main.cpp\
     tcpworker.cpp \
     graphwindow.cpp \
     qcustomplot.cpp \
-    datamanager.cpp \
-    streamobj.cpp \
-    deviceobj.cpp \
-    informationstructs.cpp \
-    devicemanagerwindow.cpp
+    datamanager.cpp
 
 HEADERS  += mainwindow.h \
     tcpworker.h \
     graphwindow.h \
     qcustomplot.h \
-    datamanager.h \
-    streamobj.h \
-    deviceobj.h \
-    informationstructs.h \
-    devicemanagerwindow.h
+    datamanager.h
 
 FORMS    += mainwindow.ui \
-    graphwindow.ui \
-    devicemanagerwindow.ui
+    graphwindow.ui
