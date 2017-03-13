@@ -29,10 +29,9 @@ private slots:
 
     void on_ChangePort_clicked();
 
-    void addNewConnection(QTcpSocket *socket, const bool type);
-    void deleteConnection(QStringList socketData);
+    void addNewConnection(deviceConnectionInfo deviceInfo);
+    void deleteConnection(deviceConnectionInfo deviceInfo);
 
-    void incommingConnection(QTcpSocket *socket);
     void on_ConnectTo_clicked();
 
 private:
@@ -43,7 +42,6 @@ private:
 
     QThread* ManagerThread;
     DataManager* Manager;
-
 };
 
 #endif // MAINWINDOW_H

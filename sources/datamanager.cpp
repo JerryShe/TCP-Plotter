@@ -11,6 +11,7 @@ DataManager *DataManager::getDataManager()
 
 DataManager::DataManager()
 {
+    qRegisterMetaType<deviceConnectionInfo>();
 }
 
 
@@ -18,7 +19,11 @@ DataManager::~DataManager()
 {
     foreach (DeviceObj* device, deviceByName) {
         qDebug()<<"delete device";
+        QThread* deviceThread = device->thread();
+        deviceThread->quit();
+        deviceThread->wait();
         delete device;
+        delete deviceThread;
     }
 }
 
@@ -53,48 +58,75 @@ void DataManager::sendMessage(const QString &DeviceName, const QString &Message)
 }
 
 
-void DataManager::deleteDevice(QTcpSocket *socket)
+void DataManager::deleteDevice()
 {
-    delete deviceBySocket[socket];
-    deviceBySocket.remove(socket);
-    emit deviceListChanged(this->getConnectionsInfo());
+    QTcpSocket *socket = static_cast<QTcpSocket*>(QObject::sender());
+    deleteDevice(socket);
+}
+
+
+void DataManager::deleteDevice(QTcpSocket* socket)
+{
+    qDebug()<< "delete device by socket";
+
+    if (deviceBySocket.contains(socket) && socket != 0)
+    {
+        DeviceObj* device = deviceBySocket[socket];
+
+        emit deviceDisconnected(device->getDeviceConnectionInfo());
+
+        deviceByName.remove(device->getDeviceName());
+        deviceBySocket.remove(socket);
+
+        QThread* deviceThread = device->thread();
+        deviceThread->quit();
+        deviceThread->wait();
+        delete device;
+        delete deviceThread;
+
+        emit deviceListChanged(this->getConnectionsInfo());
+    }
 }
 
 
 void DataManager::deleteDevice(const QString &DeviceName)
 {
-    delete deviceByName[DeviceName];
-    deviceByName.remove(DeviceName);
+    qDebug()<< "delete device by name";
+    if (deviceByName.contains(DeviceName))
+    {
+        DeviceObj* device = deviceByName[DeviceName];
+
+        emit deviceDisconnected(device->getDeviceConnectionInfo());
+
+        deviceByName.remove(DeviceName);
+        deviceBySocket.remove(device->getDeviceSocket());
+
+        QThread* deviceThread = device->thread();
+        deviceThread->quit();
+        deviceThread->wait();
+        delete device;
+        delete deviceThread;
+
+        emit deviceListChanged(this->getConnectionsInfo());
+    }
 }
 
 
-void DataManager::socketReadyRead()
-{
-    QObject * object = QObject::sender();
-    if (!object)
-        return;
-
-    QTcpSocket * socket = static_cast<QTcpSocket *>(object);
-
-    if (deviceBySocket.contains(socket))
-        deviceBySocket[socket]->receiveNewData();
-    else
-        addNewDevice(socket);
-}
-
-
-char DataManager::addNewDevice(QTcpSocket *socket)
+DeviceObj* DataManager::createDevice(QTcpSocket *socket)
 {
     DeviceObj* device = new DeviceObj(socket);
-    QThread* deviceThread = new QThread(device);
-    device->moveToThread(deviceThread);
 
     connect(device, SIGNAL(deviceWasNamed()), this, SLOT(deviceWasNamed()));
-    connect(device, SIGNAL(destroyed(QObject*)), deviceThread, SLOT(quit()));
 
-    device->initialize();
+    deviceBySocket.insert(socket, device);
+    return device;
+}
 
-    deviceBySocket.insert(socket, device);    
+
+void DataManager::confirmConnection(QTcpSocket *socket)
+{
+    if (deviceBySocket.contains(socket))
+        deviceBySocket[socket]->confirmConnection();
 }
 
 
@@ -112,7 +144,7 @@ void DataManager::deviceWasNamed()
 
     deviceByName.insert(device->getDeviceName(), device);
 
+    qDebug()<<"device connected";
     emit deviceListChanged(this->getConnectionsInfo());
+    emit deviceConnected(device->getDeviceConnectionInfo());
 }
-
-

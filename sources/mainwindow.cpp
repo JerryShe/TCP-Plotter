@@ -2,6 +2,7 @@
 #include "ui_mainwindow.h"
 
 #include "graphwindow.h"
+#include "informationstructs.h"
 
 #include <QMdiSubWindow>
 #include <QMdiArea>
@@ -35,23 +36,21 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
     Manager = DataManager::getDataManager();
     Manager->moveToThread(ManagerThread);
 
-    NetworkThread = new QThread(this);
-    connect(this, SIGNAL(destroyed(QObject*)), NetworkThread, SLOT(quit()));
-    NetworkWorker = new TcpWorker(Manager);
-    NetworkWorker->moveToThread(NetworkThread);
+    //NetworkThread = new QThread(this);
+    //connect(this, SIGNAL(destroyed(QObject*)), NetworkThread, SLOT(quit()));
+    //NetworkWorker->moveToThread(NetworkThread);
 
-    NetworkThread->start();
+    //NetworkThread->start();
     ManagerThread->start();
 
+    NetworkWorker = new TcpWorker(Manager);
+    qDebug()<<"manager "<<Manager->thread();
 
-    NetworkWorker->start(Manager);
     NetworkWorker->openPort("666");
     ui->logsList->addItem("Server started at port 666");
 
-
-    connect(NetworkWorker, &TcpWorker::connectionDone, [this](QTcpSocket* socket){addNewConnection(socket, false);});
-    connect(NetworkWorker, SIGNAL(newConnection(QTcpSocket*)), this, SLOT(incommingConnection(QTcpSocket*)));
-    connect(NetworkWorker, SIGNAL(disconnected(QStringList)), this, SLOT(deleteConnection(QStringList)));
+    connect(Manager, SIGNAL(deviceDisconnected(deviceConnectionInfo)), this, SLOT(deleteConnection(deviceConnectionInfo)));
+    connect(Manager, SIGNAL(deviceConnected(deviceConnectionInfo)), this, SLOT(addNewConnection(deviceConnectionInfo)));
 
     ui->IPLabel->setText(NetworkWorker->getLocalIP());
 }
@@ -59,7 +58,7 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
 
 MainWindow::~MainWindow()
 {
-    NetworkThread->wait();
+    //NetworkThread->wait();
     ManagerThread->wait();
     delete ui;
 }
@@ -107,41 +106,46 @@ void MainWindow::on_ChangePort_clicked()
 }
 
 
-void MainWindow::addNewConnection(QTcpSocket *socket, const bool type)
+void MainWindow::addNewConnection(deviceConnectionInfo deviceInfo)
 {
-    ui->connectionTable->insertRow(0);
-    ui->connectionTable->setItem(0, 0, new QTableWidgetItem(socket->peerName()));
-    ui->connectionTable->setItem(0, 1, new QTableWidgetItem(socket->peerAddress().toString()));
-    ui->connectionTable->setItem(0, 2, new QTableWidgetItem(QString::number(socket->peerPort())));
+    int result = QMessageBox::question(this, "New connection", "New device '"
+                                      + deviceInfo.deviceName + "' "
+                                      "with IP "
+                                      "\n" + deviceInfo.peerIP +
+                                      "\n wants to connect."
+                                      "\n\n Establish a connection?",
+                                      QMessageBox::Yes | QMessageBox::No, QMessageBox::Yes);
 
-    QColor rowColor;
-    if (type)
-        rowColor.setRgb(230,230,230);
+    if (result == QMessageBox::Yes)
+        Manager->confirmConnection(deviceInfo.deviceSocket);
     else
-        rowColor.setRgb(56,245,188);
+        Manager->deleteDevice(deviceInfo.deviceSocket);
 
-    for (int i = 0; i < 3; i++)
-        ui->connectionTable->item(0, i)->setBackgroundColor(rowColor);
 
-    ui->logsList->addItem("New connection with " + socket->peerName() + " by IP: " + socket->peerAddress().toString());
+    qDebug()<<"add new connection with " << deviceInfo.deviceName;
+    ui->connectionTable->insertRow(0);
+    ui->connectionTable->setItem(0, 0, new QTableWidgetItem(deviceInfo.deviceName));
+    ui->connectionTable->item(0,0)->setToolTip(deviceInfo.deviceDescription);
+
+    ui->connectionTable->setItem(0, 1, new QTableWidgetItem(deviceInfo.peerIP));
+    ui->connectionTable->setItem(0, 2, new QTableWidgetItem(deviceInfo.peerPort));
+
+    ui->logsList->addItem("New connection with " + deviceInfo.deviceName + " by IP: " + deviceInfo.peerIP);
 }
 
 
-void MainWindow::deleteConnection(QStringList socketData)
+void MainWindow::deleteConnection(deviceConnectionInfo deviceInfo)
 {
+    qDebug()<<"delete connection with " << deviceInfo.deviceName;
+
     int pos = -1;
-    //qDebug()<<socketData;
     for (int i = 0; i < ui->connectionTable->rowCount(); i++)
-    {
-        if (//ui->connectionTable->item(i, 0)->text() == socketData[0] &&
-                ui->connectionTable->item(i, 1)->text() == socketData[1] &&
-                ui->connectionTable->item(i, 2)->text() == socketData[2])
+        if (ui->connectionTable->item(i, 0)->text() == deviceInfo.deviceName)
             pos = i;
-    }
 
     if (pos != -1)
     {
-        ui->logsList->addItem("Disconnected with " + ui->connectionTable->item(pos,0)->text()
+        ui->logsList->addItem("Disconnected with " + deviceInfo.deviceName
                               + " with IP: " + ui->connectionTable->item(pos,1)->text());
 
         ui->connectionTable->removeRow(pos);
@@ -149,27 +153,7 @@ void MainWindow::deleteConnection(QStringList socketData)
 }
 
 
-
 void MainWindow::on_ConnectTo_clicked()
 {
     NetworkWorker->newConnectionTo(ui->ConnectIP->text(), ui->ConnectPort->text());
-}
-
-
-void MainWindow::incommingConnection(QTcpSocket *socket)
-{
-    int result = QMessageBox::question(this, "New connection", "New device wants to connect: \n"
-                                      "\n" + socket->peerName() +
-                                      "\n" + socket->peerAddress().toString() +
-                                      "\n Establish a connection?",
-                                      QMessageBox::Yes | QMessageBox::No, QMessageBox::Yes);
-
-    if (result != QMessageBox::Yes)
-    {
-        socket->disconnectFromHost();
-    }
-    else
-    {
-        addNewConnection(socket, true);
-    }
 }

@@ -3,6 +3,7 @@
 
 #include <QObject>
 #include <QTcpSocket>
+#include <QHostAddress>
 #include <QPair>
 #include <QDataStream>
 
@@ -20,9 +21,12 @@ public:
     DeviceObj(QTcpSocket* socket);
     ~DeviceObj();
 
+
+public slots:
     void initialize();
     bool wasInitialized();
     void confirmInitialization();
+    void confirmConnection();
     void requestNewName();
 
 
@@ -30,10 +34,6 @@ public:
 
     StreamObj *getStream(const QString &StreamName);
     StreamObj *getStream(const unsigned char &StreamIndex);
-
-
-    char getDeviceIndex();
-    void setDeviceIndex(const unsigned char &DeviceIndex);
 
     QString getDeviceName();
     void setDeviceName(const QString &DeviceName);
@@ -44,13 +44,25 @@ public:
     QVector <QPair<bool, QString>> getDeviceMessages();
     void sendMessage(const QString &message);
 
+    QTcpSocket* getDeviceSocket();
+
+    deviceConnectionInfo getDeviceConnectionInfo();
     deviceInfo getDeviceInfo();
 
+private slots:
+    void getNewName();
+    void abortInitialize();
+
+    void writeToSocket(QString str);
+    void writeToSocket(char* c);
 
 signals:
     void deviceWasNamed();
+    void sendToDevice(QString);
+    void sendToDevice(char*);
 
 private:
+
     unsigned char initialized;                              //0 - не готово, 1 - готово, 2 - смена имени
 
     QString deviceName;

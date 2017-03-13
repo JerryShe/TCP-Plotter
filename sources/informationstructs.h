@@ -4,6 +4,8 @@
 
 #include <QString>
 #include <QVector>
+#include <QTcpSocket>
+#include <QMetaType>
 
 struct streamInfo
 {
@@ -27,5 +29,35 @@ struct connectionsInfo
     QVector <deviceInfo> devices;
 };
 
+
+struct deviceConnectionInfo
+{
+    QString peerIP;
+    QString peerPort;
+    QString deviceName;
+    QString deviceDescription;
+    QTcpSocket* deviceSocket;
+};
+
+
+struct packet
+{
+    packet();
+    packet(const QString &DeviceName);
+
+    QString deviceName;
+    unsigned char streamIndex;
+    unsigned int time;
+    QVector <double> data;
+
+    void addVar(double var);
+};
+
+
+Q_DECLARE_METATYPE(deviceConnectionInfo)
+Q_DECLARE_METATYPE(connectionsInfo)
+Q_DECLARE_METATYPE(deviceInfo)
+Q_DECLARE_METATYPE(streamInfo)
+Q_DECLARE_METATYPE(packet)
 
 #endif // INFORMATIONSTRUCTS_H

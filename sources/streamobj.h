@@ -9,19 +9,6 @@
 #include "informationstructs.h"
 
 
-struct packet
-{
-    packet(const QString &DeviceName);
-
-    QString deviceName;
-    unsigned char streamIndex;
-    unsigned int time;
-    QVector <double> data;
-
-    void addVar(double var);
-};
-
-
 
 class StreamObj : public QObject
 {
@@ -33,7 +20,7 @@ public:
     ~StreamObj();
 
 
-    void receiveNewData(const QString &deviceName, QDataStream &dataStream);
+    bool receiveNewData(const QString &deviceName, QDataStream &dataStream);
 
 
     QString getStreamName();
@@ -59,7 +46,7 @@ signals:
 
 private:
     unsigned int timeInterval;                  //  == 0 - время явно указывается в пакете, != 0 - t += timeInterval
-
+    unsigned int currentTime;
     unsigned char streamIndex;
 
     QString streamName;

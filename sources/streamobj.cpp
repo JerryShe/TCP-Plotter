@@ -2,28 +2,15 @@
 #include <QDataStream>
 
 
-
-packet::packet(const QString &DeviceName)
-{
-    deviceName = DeviceName;
-}
-
-void packet::addVar(double var)
-{
-    data.append(var);
-}
-
-
-
-
 StreamObj::StreamObj()
 {}
+
 
 StreamObj::StreamObj(QTcpSocket* socket, unsigned char StreamIndex, QDataStream &dataStream)
 {
     deviceSocket = socket;
     streamIndex = StreamIndex;
-
+    currentTime = 0;
 
     unsigned char strSize;
     QByteArray str;
@@ -31,7 +18,7 @@ StreamObj::StreamObj(QTcpSocket* socket, unsigned char StreamIndex, QDataStream 
     dataStream >> strSize;
     if (strSize == 0)
     {
-        ///невалидное имя
+        ///невалидное имя потока
         return;
     }
     str.resize(strSize);
@@ -48,10 +35,10 @@ StreamObj::StreamObj(QTcpSocket* socket, unsigned char StreamIndex, QDataStream 
 
 
     dataStream >> timeInterval;
+    qDebug()<<"time interval " << timeInterval;
 
     unsigned char size;
     dataStream >> size;
-    qDebug()<<dataStream.atEnd();
     qDebug()<<"var size "<<size;
 
     for (int i = 0; i < size; i++)
@@ -74,6 +61,8 @@ StreamObj::StreamObj(QTcpSocket* socket, unsigned char StreamIndex, QDataStream 
             dataStream >> str;
             streamVariablesDescription.append(QString::fromUtf8(str));
         }
+        else
+            streamVariablesDescription.append("");
     }
 
     qDebug()<<streamName;
@@ -89,27 +78,40 @@ StreamObj::~StreamObj()
 }
 
 
-void StreamObj::receiveNewData(const QString &deviceName, QDataStream &dataStream)
+bool StreamObj::receiveNewData(const QString &deviceName, QDataStream &dataStream)
 {
+    qDebug()<<"receive";
     packet pack(deviceName);
 
     unsigned int time;
     if (timeInterval == 0)
+    {
         dataStream>>time;
+        currentTime += time;
+    }
     else
-        time += timeInterval;
+    {
+         currentTime += timeInterval;
+    }
+
 
     pack.streamIndex = streamIndex;
-    pack.time = time;
+    pack.time = currentTime;
 
     double temp;
     for (int i = 0; i < streamVariables.size(); i++)
     {
         dataStream>>temp;
         pack.addVar(temp);
+        qDebug()<<temp;
     }
 
-    emit newData(pack);
+    if (dataStream.commitTransaction())
+    {
+        emit newData(pack);
+        return true;
+    }
+    return false;
 }
 
 
@@ -161,7 +163,7 @@ streamInfo StreamObj::getStreamInfo()
     info.streamName = streamName;
     info.streamDescription = streamDescription;
     info.streamVariables = streamVariables;
-    info.streamVariablesDescription;
+    info.streamVariablesDescription = streamVariablesDescription;
 
     return info;
 }

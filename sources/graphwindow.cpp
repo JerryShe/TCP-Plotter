@@ -182,7 +182,17 @@ void GraphWindow::on_RangeSlider_valueChanged(int value)
     ui->graph->xAxis->setRange(pos, pos + ui->RangeBox->value());
 }
 
+
 void GraphWindow::on_AddGraphButton_clicked()
 {
-    DeviceManagerWindow* window = new DeviceManagerWindow(this);
+    DeviceManagerWindow* DeviceWindow = new DeviceManagerWindow(this);
+    connect(DeviceWindow, SIGNAL(finished()), this, SLOT(updateGraphs()));
+    ui->centralwidget->layout()->addWidget(DeviceWindow);
+    ui->GraphWidget->hide();
+}
+
+
+void GraphWindow::updateGraphs()
+{
+    ui->GraphWidget->show();
 }

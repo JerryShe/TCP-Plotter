@@ -41,6 +41,7 @@ private slots:
 
 
     void on_AddGraphButton_clicked();
+    void updateGraphs();
 
 protected:
     bool eventFilter(QObject *watched, QEvent *event);

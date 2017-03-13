@@ -16,7 +16,8 @@ SOURCES += main.cpp\
     streamobj.cpp \
     deviceobj.cpp \
     informationstructs.cpp \
-    devicemanagerwindow.cpp
+    devicemanagerwindow.cpp \
+    threadedtcpsocket.cpp
 
 HEADERS  += mainwindow.h \
     tcpworker.h \
@@ -26,7 +27,8 @@ HEADERS  += mainwindow.h \
     streamobj.h \
     deviceobj.h \
     informationstructs.h \
-    devicemanagerwindow.h
+    devicemanagerwindow.h \
+    threadedtcpsocket.h
 
 FORMS    += mainwindow.ui \
     graphwindow.ui \

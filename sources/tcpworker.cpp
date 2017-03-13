@@ -7,24 +7,20 @@
 #include <QDataStream>
 #include <QAbstractSocket>
 
+#include <threadedtcpsocket.h>
+
 
 TcpWorker::TcpWorker(DataManager* manager)
 {
     qRegisterMetaType<QAbstractSocket::SocketError>();
     qRegisterMetaType<QVector<int>>();
+    dataManager = manager;
+    qDebug()<<"start";
 }
 
 
 TcpWorker::~TcpWorker()
 {}
-
-
-void TcpWorker::start(DataManager* manager)
-{
-    dataManager = manager;
-    server = new QTcpServer();
-    connect(server, SIGNAL(newConnection()), this, SLOT(newConnectionFrom()));
-}
 
 
 QString TcpWorker::getLocalIP()
@@ -70,10 +66,10 @@ void TcpWorker::socketError(QAbstractSocket::SocketError err)
 
 bool TcpWorker::openPort(const QString &port)
 {
-    if (server->isListening())
-            server->close();
+    if (isListening())
+            close();
 
-    if(!server->listen(QHostAddress::Any, port.toShort()))
+    if(!listen(QHostAddress::Any, port.toShort()))
         return false;
 
     return true;
@@ -81,36 +77,7 @@ bool TcpWorker::openPort(const QString &port)
 
 short TcpWorker::getServerPort()
 {
-    return server->serverPort();
-}
-
-
-bool TcpWorker::sendTo(const QString &ip, const QString &port, const QString &message)
-{
-    QTcpSocket* peerSocket = 0;
-    short numPort = port.toShort();
-
-    foreach (QTcpSocket* socket, socketList) {
-        if (socket->peerAddress().toString() == ip && socket->peerPort() == numPort)
-        {
-            peerSocket = socket;
-            break;
-        }
-    }
-
-    if (peerSocket == 0)
-    {
-        qDebug()<<"sending falue";
-        return false;
-    }
-
-    QByteArray  arrBlock;
-    QDataStream out(&arrBlock, QIODevice::WriteOnly);
-    out<<message;
-    if (peerSocket->write(arrBlock) == -1)
-        return false;
-
-    return true;
+    return serverPort();
 }
 
 
@@ -122,12 +89,6 @@ void TcpWorker::socketDisconnected()
         return;
 
     QTcpSocket * socket = static_cast<QTcpSocket *>(object);
-
-
-    QStringList socketData;
-    socketData << socket->peerName() << socket->peerAddress().toString() << QString::number(socket->peerPort());
-    emit disconnected(socketData);
-    dataManager->deleteDevice(socket);
 
     int pos = socketList.indexOf(socket);
     if (pos != -1)
@@ -143,16 +104,11 @@ void TcpWorker::socketDisconnected()
 
 void TcpWorker::newConnectionTo(const QString &ip, const QString &port)
 {
-    QTcpSocket* socket = new QTcpSocket();
-    socket->connectToHost(ip, port.toShort());
+    qDebug()<<"connecting";
 
-    connect(socket, SIGNAL(connected()), this, SLOT(newConnectionToDone()));
-
-    connect(socket, SIGNAL(readyRead()), dataManager, SLOT(socketReadyRead()));
-    connect(socket, SIGNAL(error(QAbstractSocket::SocketError)), this, SLOT(socketError(QAbstractSocket::SocketError)));
-    connect(socket, SIGNAL(disconnected()), this, SLOT(socketDisconnected()));
-
-    socketList.append(socket);
+    ThreadedTcpSocket* socketThread = new ThreadedTcpSocket(ip, port.toShort(), this);
+    connect(socketThread, SIGNAL(socketCreated(QTcpSocket*)), this, SLOT(socketCreated(QTcpSocket*)));
+    socketThread->start();
 }
 
 
@@ -167,19 +123,28 @@ void TcpWorker::newConnectionToDone()
 }
 
 
-void TcpWorker::newConnectionFrom()
+void TcpWorker::incomingConnection(qintptr socketDescriptor)
 {
     qDebug()<<"connecting";
-    QTcpSocket * socket = server->nextPendingConnection();
 
-    connect(socket, SIGNAL(readyRead()), dataManager, SLOT(socketReadyRead()));
+    ThreadedTcpSocket* socketThread = new ThreadedTcpSocket(socketDescriptor, this);
+    connect(socketThread, SIGNAL(socketCreated(QTcpSocket*)), this, SLOT(socketCreated(QTcpSocket*)));
+    socketThread->start();
+}
+
+
+void TcpWorker::socketCreated(QTcpSocket *socket)
+{
+    DeviceObj* device = dataManager->createDevice(socket);
+
     connect(socket, SIGNAL(error(QAbstractSocket::SocketError)), this, SLOT(socketError(QAbstractSocket::SocketError)));
     connect(socket, SIGNAL(disconnected()), this, SLOT(socketDisconnected()));
 
+    connect(socket, SIGNAL(readyRead()), device, SLOT(receiveNewData()));
+    connect(socket, SIGNAL(disconnected()), dataManager, SLOT(deleteDevice()));
+
     if (socket->bytesAvailable() > 0)
         emit socket->readyRead();
-
-    emit newConnection(socket);
 
     socketList.append(socket);
 
