@@ -18,7 +18,7 @@ public:
     static DataManager *getDataManager();
 
 public slots:    
-    DeviceObj* createDevice(QTcpSocket* socket);
+    void createDevice(QTcpSocket* socket);
 
     StreamObj* getConection(const QString &DeviceName, const QString &StreamName);
     StreamObj* getConection(const QString &DeviceName, const unsigned char &StreamIndex);

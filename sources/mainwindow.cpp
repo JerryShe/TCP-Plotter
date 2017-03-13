@@ -29,8 +29,6 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
 
     qDebug()<<"gui " << this->thread();
 
-
-
     ManagerThread = new QThread(this);
     connect(this, SIGNAL(destroyed(QObject*)), ManagerThread, SLOT(quit()));
     Manager = DataManager::getDataManager();

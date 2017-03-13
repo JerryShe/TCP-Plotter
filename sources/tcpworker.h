@@ -36,6 +36,7 @@ private slots:
     void newConnectionToDone();
     void socketError(QAbstractSocket::SocketError);
     void socketDisconnected();
+
     void socketCreated(QTcpSocket* socket);
 
 protected:

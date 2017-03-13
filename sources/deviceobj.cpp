@@ -39,7 +39,7 @@ void DeviceObj::writeToSocket(QString str)
 void DeviceObj::writeToSocket(char *c)
 {
     qDebug()<<"write to socket";
-    deviceSocket->write(c,2);
+    deviceSocket->write(c,1);
 }
 
 
@@ -104,7 +104,7 @@ void DeviceObj::confirmConnection()
 
     if (initialized == 1)
     {
-        char a[2] = {1,1};
+        char a[1] = {1};
         emit sendToDevice(a);
     }
 }
@@ -121,7 +121,7 @@ void DeviceObj::requestNewName()
 {
     qDebug()<<"request new name";
     initialized = 2;
-    char a[2] = {2,2};
+    char a[1] = {2};
     emit sendToDevice(a);
 }
 
@@ -130,7 +130,7 @@ void DeviceObj::abortInitialize()
 {
     qDebug()<<"abort initialize";
     initialized = 0;
-    char a[2] = {0,0};
+    char a[1] = {0};
     emit sendToDevice(a);
 }
 
@@ -154,7 +154,7 @@ void DeviceObj::receiveNewData()
         qDebug()<<"receive at "<< streamIndex;
 
         if (streamIndex != 0 && streamIndex - 1 < streamByIndex.size())
-            if (streamByIndex[streamIndex - 1]->receiveNewData(deviceName, deviceDataStream))
+            if (streamByIndex[streamIndex - 1]->receiveNewData(deviceName, deviceDataStream) && deviceSocket->bytesAvailable() > 9)
                 receiveNewData();
     }
     else

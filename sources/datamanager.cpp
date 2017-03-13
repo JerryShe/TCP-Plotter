@@ -112,14 +112,14 @@ void DataManager::deleteDevice(const QString &DeviceName)
 }
 
 
-DeviceObj* DataManager::createDevice(QTcpSocket *socket)
+void DataManager::createDevice(QTcpSocket *socket)
 {
     DeviceObj* device = new DeviceObj(socket);
 
+    connect(socket, SIGNAL(readyRead()), device, SLOT(receiveNewData()));
     connect(device, SIGNAL(deviceWasNamed()), this, SLOT(deviceWasNamed()));
 
     deviceBySocket.insert(socket, device);
-    return device;
 }
 
 

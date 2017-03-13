@@ -135,12 +135,11 @@ void TcpWorker::incomingConnection(qintptr socketDescriptor)
 
 void TcpWorker::socketCreated(QTcpSocket *socket)
 {
-    DeviceObj* device = dataManager->createDevice(socket);
+    dataManager->createDevice(socket);
 
     connect(socket, SIGNAL(error(QAbstractSocket::SocketError)), this, SLOT(socketError(QAbstractSocket::SocketError)));
     connect(socket, SIGNAL(disconnected()), this, SLOT(socketDisconnected()));
 
-    connect(socket, SIGNAL(readyRead()), device, SLOT(receiveNewData()));
     connect(socket, SIGNAL(disconnected()), dataManager, SLOT(deleteDevice()));
 
     if (socket->bytesAvailable() > 0)
