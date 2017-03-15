@@ -57,7 +57,6 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
 MainWindow::~MainWindow()
 {
     //NetworkThread->wait();
-    ManagerThread->wait();
     delete ui;
 }
 
