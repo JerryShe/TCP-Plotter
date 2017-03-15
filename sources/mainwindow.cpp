@@ -41,7 +41,7 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
     //NetworkThread->start();
     ManagerThread->start();
 
-    NetworkWorker = new TcpWorker(Manager);
+    NetworkWorker = new TcpReciver(Manager);
     qDebug()<<"manager "<<Manager->thread();
 
     NetworkWorker->openPort("666");

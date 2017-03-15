@@ -38,7 +38,7 @@ private:
     Ui::MainWindow *ui;
 
     QThread* NetworkThread;
-    TcpWorker* NetworkWorker;
+    TcpReciver* NetworkWorker;
 
     QThread* ManagerThread;
     DataManager* Manager;

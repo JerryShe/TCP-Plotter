@@ -10,7 +10,7 @@
 #include <threadedtcpsocket.h>
 
 
-TcpWorker::TcpWorker(DataManager* manager)
+TcpReciver::TcpReciver(DataManager* manager)
 {
     qRegisterMetaType<QAbstractSocket::SocketError>();
     qRegisterMetaType<QVector<int>>();
@@ -19,11 +19,11 @@ TcpWorker::TcpWorker(DataManager* manager)
 }
 
 
-TcpWorker::~TcpWorker()
+TcpReciver::~TcpReciver()
 {}
 
 
-QString TcpWorker::getLocalIP()
+QString TcpReciver::getLocalIP()
 {
     QStringList addrs;
     QStringList names;
@@ -51,7 +51,7 @@ QString TcpWorker::getLocalIP()
 }
 
 
-void TcpWorker::socketError(QAbstractSocket::SocketError err)
+void TcpReciver::socketError(QAbstractSocket::SocketError err)
 {
     QObject * object = QObject::sender();
     if (!object)
@@ -64,7 +64,7 @@ void TcpWorker::socketError(QAbstractSocket::SocketError err)
 }
 
 
-bool TcpWorker::openPort(const QString &port)
+bool TcpReciver::openPort(const QString &port)
 {
     if (isListening())
             close();
@@ -75,13 +75,13 @@ bool TcpWorker::openPort(const QString &port)
     return true;
 }
 
-short TcpWorker::getServerPort()
+short TcpReciver::getServerPort()
 {
     return serverPort();
 }
 
 
-void TcpWorker::socketDisconnected()
+void TcpReciver::socketDisconnected()
 {
     qDebug()<<"disconected";
     QObject * object = QObject::sender();
@@ -102,7 +102,7 @@ void TcpWorker::socketDisconnected()
 }
 
 
-void TcpWorker::newConnectionTo(const QString &ip, const QString &port)
+void TcpReciver::newConnectionTo(const QString &ip, const QString &port)
 {
     qDebug()<<"connecting";
 
@@ -112,7 +112,7 @@ void TcpWorker::newConnectionTo(const QString &ip, const QString &port)
 }
 
 
-void TcpWorker::newConnectionToDone()
+void TcpReciver::newConnectionToDone()
 {
     QObject * object = QObject::sender();
     QTcpSocket* socket = static_cast<QTcpSocket *>(object);
@@ -123,7 +123,7 @@ void TcpWorker::newConnectionToDone()
 }
 
 
-void TcpWorker::incomingConnection(qintptr socketDescriptor)
+void TcpReciver::incomingConnection(qintptr socketDescriptor)
 {
     qDebug()<<"connecting";
 
@@ -133,7 +133,7 @@ void TcpWorker::incomingConnection(qintptr socketDescriptor)
 }
 
 
-void TcpWorker::socketCreated(QTcpSocket *socket)
+void TcpReciver::socketCreated(QTcpSocket *socket)
 {
     dataManager->createDevice(socket);
 

@@ -10,20 +10,20 @@
 #include "datamanager.h"
 
 
-class TcpWorker : public QTcpServer
+class TcpReciver : public QTcpServer
 {
     Q_OBJECT
 
 public:
-    TcpWorker(DataManager* manager);
-    ~TcpWorker();
+    TcpReciver(DataManager* manager);
+    ~TcpReciver();
 
     QString getLocalIP();
 
 signals:
-    void connectionError(QTcpSocket* socket);
-    void disconnected(QStringList socketData);
-    void connectionDone(QTcpSocket* socket);
+    void connectionError(QTcpSocket*);
+    void disconnected(QStringList);
+    void connectionDone(QTcpSocket*);
 
 
 public slots:

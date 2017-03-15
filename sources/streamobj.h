@@ -41,7 +41,7 @@ public:
 
 
 signals:
-    void newData(packet pack);
+    void newData(packet);
 
 
 private:
