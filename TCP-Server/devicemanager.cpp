@@ -59,9 +59,19 @@ deviceList DeviceManager::getDeviceList()
 }
 
 
-void DeviceManager::sendMessage(const QString &DeviceName, message mess)
+void DeviceManager::sendMessage(message mess)
 {
-    deviceByName[DeviceName]->sendMessage(mess);
+    if (mess.recipientName != "")
+    {
+        if (deviceByName.contains(mess.recipientName))
+            deviceByName[mess.recipientName]->sendMessage(mess);
+    }
+    else
+    {
+        foreach (DeviceObj* device, deviceByName) {
+            device->sendMessage(mess);
+        }
+    }
 }
 
 

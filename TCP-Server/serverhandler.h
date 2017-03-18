@@ -25,12 +25,6 @@ private slots:
     void deviceDisconnected(deviceConnectionInfo deviceInfo);
     void listenerDisconnected(listenerInfo deviceInfo);
 
-    void listenerSendMessageTo();
-    void deviceSendMessage();
-    void masterSendMessageTo();
-
-    void listenerWantConnectionTable();
-
 private:
     DeviceManager* deviceManager;
     ListenerManager* listenerManager;

@@ -53,6 +53,7 @@ struct listenerRights
     listenerRights(QJsonObject json);
 
     QMap <QString, QVector<bool>> rightsMap;
+    bool broadcastMessaging;
 
     QVector <bool> getByName(const QString name);
     void append(const QString &name, QVector <bool> &list);

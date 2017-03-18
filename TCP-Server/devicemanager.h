@@ -24,7 +24,7 @@ public:
 public slots:    
     void createDevice(QTcpSocket* socket);
 
-    void sendMessage(const QString &DeviceName, message mess);
+    void sendMessage(message mess);
 
     void deleteDevice();
     void deleteDevice(QTcpSocket* socket);

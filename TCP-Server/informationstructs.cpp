@@ -76,13 +76,14 @@ QByteArray deviceList::toJson()
 
 listenerRights::listenerRights()
 {
-
+    broadcastMessaging = false;
 }
 
 
 listenerRights::listenerRights(QJsonObject json)
 {
     QJsonArray arr = json["list"].toArray();
+    broadcastMessaging = json["broadcast"].toBool();
 
     foreach (auto item, arr) {
         QString name = item.toObject()["name"].toString();

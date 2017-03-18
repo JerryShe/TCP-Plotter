@@ -247,7 +247,7 @@ QVector<QPair<bool, QString> > DeviceObj::getDeviceMessages()
 
 void DeviceObj::sendMessage(message mess)
 {
-    deviceSocket->write(mess.toJson());
+    emit writeToSocket(mess.mess);
 }
 
 

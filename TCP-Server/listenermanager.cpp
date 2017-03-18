@@ -4,6 +4,8 @@
 ListenerManager::ListenerManager(DeviceManager* manager)
 {
     deviceManager = manager;
+    connect(deviceManager, SIGNAL(newMessage(message)), this, SLOT(sendDeviceMessage(message)));
+    connect(this, SIGNAL(newMessage(message)), deviceManager, SLOT(sendMessage(message)));
 }
 
 
@@ -18,7 +20,7 @@ void ListenerManager::createListener(QTcpSocket* socket)
     connect(socket, SIGNAL(readyRead()), listener, SLOT(receiveNewData()));
     connect(listener, SIGNAL(listenerWasConnected()), this, SLOT(listenerWasConnected()));
 
-    connect(listener, SIGNAL(newMessage(message)), this, SLOT(sendMessage(message)));
+    connect(listener, SIGNAL(newMessage(message)), this, SLOT(sendListenerMessage(message)));
     connect(listener, SIGNAL(rightsRequest(listenerRights)), this, SLOT(requestRights(listenerRights)));
     connect(listener, SIGNAL(controlRequest(QString)), this, SLOT(requestControl(QString)));
     connect(listener, SIGNAL(commandRequest(QString)), this, SLOT(requestCommand(QString)));
@@ -27,11 +29,16 @@ void ListenerManager::createListener(QTcpSocket* socket)
 }
 
 
-void ListenerManager::sendMessage(message mess)
+void ListenerManager::sendListenerMessage(message mess)
 {
     ListenerObj* listener = static_cast<ListenerObj*>(QObject::sender());
+
     if (listener == 0 || !listenerPrivileges.contains(listener))
         return;
+
+    if (mess.recipientName == "")
+        if (listenerPrivileges[listener].broadcastMessaging == true)
+            emit newMessage(mess);
 
     if (listenerPrivileges[listener].getByName(mess.recipientName).at(0) == true)
         emit newMessage(mess);
@@ -68,6 +75,33 @@ void ListenerManager::requestCommand(const QString command)
 }
 
 
+void ListenerManager::sendDeviceMessage(message mess)
+{
+    if (!listenerByName.contains(mess.recipientName))
+    {
+        if (mess.recipientName == "")
+        {
+            foreach (ListenerObj* listener, listenerByName) {
+                if (listenerPrivileges.contains(listener))
+                {
+                    if (listenerPrivileges[listener].getByName(mess.senderName).size() > 0)
+                        if (listenerPrivileges[listener].getByName(mess.senderName)[0] == true)
+                            listener->sendMessage(mess);
+                }
+            }
+        }
+        else
+            return;
+    }
+
+    ListenerObj* listener = listenerByName[mess.recipientName];
+    if (listenerPrivileges.contains(listener))
+        if (listenerPrivileges[listener].getByName(mess.senderName).size() > 0)
+            if (listenerPrivileges[listener].getByName(mess.senderName)[0] == true)
+                listener->sendMessage(mess);
+}
+
+
 void ListenerManager::confirmConnection(QTcpSocket* socket)
 {
     if (listenerBySocket.contains(socket))
@@ -94,23 +128,10 @@ void ListenerManager::confirmRights(const QString name, listenerRights rights)
         if (device != 0)
         {
             QVector <bool> arr = rights.rightsMap[devices[i]];
-            if (arr.size() > 0)
-            {
-                if (arr[0] == true)
-                    connect(device, SIGNAL(newMessage(message)), listener, SLOT(sendMessage(message)));
-
-                for (int i = 1; i < arr.size(); i++)
-                    connect(device->getStream(i), SIGNAL(newData(packet)), listener, SLOT(sendData(packet)));
-            }
+            for (int i = 1; i < arr.size(); i++)
+                connect(device->getStream(i), SIGNAL(newData(packet)), listener, SLOT(sendData(packet)));
         }
     }
-}
-
-
-void ListenerManager::sendMessage(const QString &name, message mess)
-{
-    if (listenerByName.contains(name))
-        listenerByName[name]->sendMessage(mess);
 }
 
 

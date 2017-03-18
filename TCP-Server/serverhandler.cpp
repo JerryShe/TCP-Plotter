@@ -45,7 +45,9 @@ ServerHandler::ServerHandler()
     listenerManager = new ListenerManager(deviceManager);
     connect(listenerManager, SIGNAL(listenerConnected(listenerInfo)), this, SLOT(confirmListenerConnection(listenerInfo)));
     connect(listenerManager, SIGNAL(listenerDisconnected(listenerInfo)), this, SLOT(listenerDisconnected(listenerInfo)));
-
+    connect(listenerManager, SIGNAL(listenerRequestRights(listenerInfo,listenerRights)), this, SLOT());
+    connect(listenerManager, SIGNAL(listenerRequestControl(listenerInfo,QString)), this, SLOT());
+    connect(listenerManager, SIGNAL(masterCommand(QString)), this, SLOT());
 
     if (consoleMode)
         out << "Receiver server starting at port: "<<PortInput << "..." << endl;
@@ -67,6 +69,7 @@ ServerHandler::~ServerHandler()
     delete transmitter;
     delete receiver;
     delete deviceManager;
+    delete listenerManager;
 }
 
 
@@ -194,78 +197,6 @@ void ServerHandler::deviceDisconnected(deviceConnectionInfo info)
 
 
 void ServerHandler::listenerDisconnected(listenerInfo info)
-{
-    if (consoleMode && !masterType)
-    {
-        QTextStream out(stdout);
-        QTextStream in(stdin);
-    }
-    else if(consoleMode && masterType)
-    {
-
-    }
-    else if (!consoleMode)
-    {
-
-    }
-}
-
-
-void ServerHandler::listenerSendMessageTo()
-{
-    if (consoleMode && !masterType)
-    {
-        QTextStream out(stdout);
-        QTextStream in(stdin);
-    }
-    else if(consoleMode && masterType)
-    {
-
-    }
-    else if (!consoleMode)
-    {
-
-    }
-}
-
-
-void ServerHandler::deviceSendMessage()
-{
-    if (consoleMode && !masterType)
-    {
-        QTextStream out(stdout);
-        QTextStream in(stdin);
-    }
-    else if(consoleMode && masterType)
-    {
-
-    }
-    else if (!consoleMode)
-    {
-
-    }
-}
-
-
-void ServerHandler::masterSendMessageTo()
-{
-    if (consoleMode && !masterType)
-    {
-        QTextStream out(stdout);
-        QTextStream in(stdin);
-    }
-    else if(consoleMode && masterType)
-    {
-
-    }
-    else if (!consoleMode)
-    {
-
-    }
-}
-
-
-void ServerHandler::listenerWantConnectionTable()
 {
     if (consoleMode && !masterType)
     {

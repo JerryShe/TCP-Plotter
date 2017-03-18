@@ -41,14 +41,14 @@ public slots:
     void deleteListener(QTcpSocket* socket);
     void deleteListener(const QString &name);
 
-    void sendMessage(const QString &name, message mess);
+    void sendListenerMessage(message mess);
+    void sendDeviceMessage(message mess);
 
     listenerList getListenerList();
 
 private slots:
     void listenerWasConnected();
 
-    void sendMessage(message mess);
     void requestRights(listenerRights rights);
     void requestControl(const QString key);
     void requestCommand(const QString command);
