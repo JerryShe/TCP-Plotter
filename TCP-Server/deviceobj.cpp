@@ -5,10 +5,7 @@ DeviceObj::DeviceObj()
 {}
 
 DeviceObj::~DeviceObj()
-{
-    qDebug()<<"delete socket";
-    delete deviceSocket;
-}
+{}
 
 
 DeviceObj::DeviceObj(QTcpSocket *socket)
@@ -25,14 +22,21 @@ DeviceObj::DeviceObj(QTcpSocket *socket)
 }
 
 
+StreamObj* DeviceObj::getStream(const unsigned char &index)
+{
+    if (streamByIndex.size() > index)
+        return streamByIndex[index];
+    return 0;
+}
+
+
 void DeviceObj::writeToSocket(QString str)
 {
-    char size[1] {str.size()};
-    const char* mass = str.toUtf8().toStdString().c_str();
+    char size[1] {(unsigned char)str.size()};
 
     deviceSocket->write((unsigned char)0);
     deviceSocket->write(size);
-    deviceSocket->write(mass, str.size());
+    deviceSocket->write(str.toUtf8().toStdString().c_str(), str.size());
 }
 
 
@@ -78,6 +82,7 @@ void DeviceObj::initialize()
     for (unsigned char i = 1; i <= size; i++)
     {
         StreamObj* strObj = new StreamObj(deviceSocket, i, deviceDataStream);
+        connect(strObj, SIGNAL(newData(packet)), this, SIGNAL(newData(packet)));
 
         streamByName.insert(strObj->getStreamName(), strObj);
         streamByIndex.append(strObj);
@@ -94,7 +99,7 @@ void DeviceObj::initialize()
     qDebug()<<deviceDescription;
     qDebug()<<streamByIndex.size();
 
-    emit deviceWasNamed();
+    emit deviceWasConnected();
 }
 
 
@@ -153,9 +158,13 @@ void DeviceObj::receiveNewData()
         deviceDataStream>>streamIndex;
         qDebug()<<"receive at "<< streamIndex;
 
-        if (streamIndex != 0 && streamIndex - 1 < streamByIndex.size())
-            if (streamByIndex[streamIndex - 1]->receiveNewData(deviceName, deviceDataStream) && deviceSocket->bytesAvailable() > 9)
+        if (streamIndex > 0 && streamIndex - 1 < streamByIndex.size())
+        {
+            if (streamByIndex[streamIndex - 1]->receiveNewData(deviceDataStream) && deviceSocket->bytesAvailable() > 9)
                 receiveNewData();
+        }
+        else if (streamIndex == 0)
+            receiveMessage();
     }
     else
     {
@@ -164,6 +173,32 @@ void DeviceObj::receiveNewData()
         else
             getNewName();
     }
+}
+
+
+void DeviceObj::receiveMessage()
+{
+    unsigned char size;
+    deviceDataStream >> size;
+
+    char* mess = new char[size];
+    deviceDataStream >> mess;
+
+    if (!deviceDataStream.commitTransaction())
+        return;
+
+    message newMess;
+    newMess.senderName = deviceName;
+    newMess.mess = QString::fromUtf8(mess, size);
+
+    emit newMessage(newMess);
+}
+
+
+void DeviceObj::newPacket(packet pack)
+{
+    pack.deviceName = deviceName;
+    emit newData(pack.toJson());
 }
 
 
@@ -182,23 +217,7 @@ void DeviceObj::getNewName()
 
     deviceName = QString::fromUtf8(str);
     qDebug()<<"try new name :"<< deviceName;
-    emit deviceWasNamed();
-}
-
-
-StreamObj *DeviceObj::getStream(const QString &StreamName)
-{
-    if (streamByName.contains(StreamName))
-        return streamByName[StreamName];
-    return 0;
-}
-
-
-StreamObj *DeviceObj::getStream(const unsigned char &StreamIndex)
-{
-    if (streamByIndex.size() < StreamIndex && StreamIndex > 0)
-        return streamByIndex[StreamIndex];
-    return 0;
+    emit deviceWasConnected();
 }
 
 
@@ -208,21 +227,9 @@ QString DeviceObj::getDeviceName()
 }
 
 
-void DeviceObj::setDeviceName(const QString &DeviceName)
-{
-    deviceName = DeviceName;
-}
-
-
 QString DeviceObj::getDeviceDescription()
 {
     return deviceDescription;
-}
-
-
-void DeviceObj::setDeviceDescription(const QString &DeviceDescription)
-{
-    deviceDescription = DeviceDescription;
 }
 
 
@@ -238,9 +245,9 @@ QVector<QPair<bool, QString> > DeviceObj::getDeviceMessages()
 }
 
 
-void DeviceObj::sendMessage(const QString &message)
+void DeviceObj::sendMessage(message mess)
 {
-    deviceSocket->write(message.toUtf8().toStdString().c_str());
+    deviceSocket->write(mess.toJson());
 }
 
 
@@ -259,7 +266,7 @@ deviceConnectionInfo DeviceObj::getDeviceConnectionInfo()
 
 deviceInfo DeviceObj::getDeviceInfo()
 {
-    info info;
+    deviceInfo info;
     info.deviceName = deviceName;
     info.deviceDescription = deviceDescription;
 

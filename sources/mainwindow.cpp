@@ -31,7 +31,7 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
 
     ManagerThread = new QThread(this);
     connect(this, SIGNAL(destroyed(QObject*)), ManagerThread, SLOT(quit()));
-    Manager = DataManager::getDataManager();
+    Manager = DeviceManager::getDataManager();
     Manager->moveToThread(ManagerThread);
 
     //NetworkThread = new QThread(this);
@@ -41,7 +41,7 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
     //NetworkThread->start();
     ManagerThread->start();
 
-    NetworkWorker = new TcpReciver(Manager);
+    NetworkWorker = new TcpReceiver(Manager);
     qDebug()<<"manager "<<Manager->thread();
 
     NetworkWorker->openPort("666");

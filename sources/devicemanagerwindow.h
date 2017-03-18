@@ -23,7 +23,7 @@ public:
     ~DeviceManagerWindow();
 
 private slots:
-    void updateDeviceData(connectionsInfo info);
+    void updateDeviceData(deviceConnectionsInfo deviceInfo);
 
 
     void on_CloseButton_clicked();
@@ -42,7 +42,7 @@ private:
     QStandardItemModel* dataModel;
 
 
-    DataManager* manager;
+    DeviceManager* manager;
 };
 
 #endif // DEVICEMANAGERWINDOW_H

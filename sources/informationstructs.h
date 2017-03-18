@@ -24,7 +24,7 @@ struct deviceInfo
 };
 
 
-struct connectionsInfo
+struct deviceConnectionsInfo
 {
     QVector <deviceInfo> devices;
 };

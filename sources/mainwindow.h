@@ -38,10 +38,10 @@ private:
     Ui::MainWindow *ui;
 
     QThread* NetworkThread;
-    TcpReciver* NetworkWorker;
+    TcpReceiver* NetworkWorker;
 
     QThread* ManagerThread;
-    DataManager* Manager;
+    DeviceManager* Manager;
 };
 
 #endif // MAINWINDOW_H

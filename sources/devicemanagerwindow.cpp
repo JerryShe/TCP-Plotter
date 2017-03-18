@@ -12,8 +12,8 @@ DeviceManagerWindow::DeviceManagerWindow(QWidget *parent) : QWidget(parent), ui(
     deviceModel = new QStandardItemModel(this);
     dataModel = new QStandardItemModel(this);
 
-    manager = DataManager::getDataManager();
-    connect(manager, SIGNAL(deviceListChanged(connectionsInfo)), this, SLOT(updateDeviceData(connectionsInfo)));
+    manager = DeviceManager::getDataManager();
+    connect(manager, SIGNAL(deviceListChanged(deviceConnectionsInfo)), this, SLOT(updateDeviceData(deviceConnectionsInfo)));
     updateDeviceData(manager->getConnectionsInfo());
     this->show();
 }
@@ -25,7 +25,7 @@ DeviceManagerWindow::~DeviceManagerWindow()
 }
 
 
-void DeviceManagerWindow::updateDeviceData(connectionsInfo info)
+void DeviceManagerWindow::updateDeviceData(deviceConnectionsInfo info)
 {
     deviceModel->clear();
     QStandardItem* deviceRoot = deviceModel->invisibleRootItem();

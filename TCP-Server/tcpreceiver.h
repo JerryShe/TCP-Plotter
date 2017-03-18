@@ -6,8 +6,7 @@
 #include <QTcpSocket>
 #include <QMetaType>
 
-
-#include "datamanager.h"
+#include "devicemanager.h"
 
 
 class TcpReceiver : public QTcpServer
@@ -15,38 +14,26 @@ class TcpReceiver : public QTcpServer
     Q_OBJECT
 
 public:
-    TcpReceiver(DeviceManager* manager);
+    TcpReceiver(DeviceManager* manager, const short port);
     ~TcpReceiver();
-
-    QString getLocalIP();
 
 signals:
     void connectionError(QTcpSocket*);
     void disconnected(QStringList);
     void connectionDone(QTcpSocket*);
 
-
 public slots:
-    bool openPort(const QString &port);
-    void newConnectionTo(const QString &ip, const QString &port);
-    short getServerPort();
-
+    void connectTo(const QString &ip, const short &port);
 
 private slots:
-    void newConnectionToDone();
     void socketError(QAbstractSocket::SocketError);
-    void socketDisconnected();
-
     void socketCreated(QTcpSocket* socket);
 
 protected:
     void incomingConnection(qintptr socketDescriptor);
 
-
 private:
-    QVector<QTcpSocket*> socketList;
-
-    DeviceManager* dataManager;
+    DeviceManager* deviceManager;
 };
 
 

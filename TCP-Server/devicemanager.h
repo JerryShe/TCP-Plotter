@@ -15,21 +15,22 @@ class DeviceManager : public QObject
     Q_OBJECT
 
 public:
-    static DeviceManager *getDataManager();
+    DeviceManager();
+    ~DeviceManager();
+
+    DeviceObj* getDeviceByName(const QString &name);
+    StreamObj* getDeviceStream(const QString &name, const unsigned char index);
 
 public slots:    
     void createDevice(QTcpSocket* socket);
 
-    StreamObj* getConection(const QString &DeviceName, const QString &StreamName);
-    StreamObj* getConection(const QString &DeviceName, const unsigned char &StreamIndex);
-
-    void sendMessage(const QString &DeviceName, const QString &Message);
+    void sendMessage(const QString &DeviceName, message mess);
 
     void deleteDevice();
     void deleteDevice(QTcpSocket* socket);
     void deleteDevice(const QString &DeviceName);
 
-    deviceConnectionsInfo getConnectionsInfo();
+    deviceList getDeviceList();
 
     void confirmConnection(QTcpSocket* socket);
 
@@ -37,18 +38,13 @@ signals:
     void deviceConnected(deviceConnectionInfo);
     void deviceDisconnected(deviceConnectionInfo);
 
-    void newMessage(QPair<QString,QString>);
-    void deviceListChanged(deviceConnectionsInfo);
-
+    void newMessage(message);
+    void deviceListChanged(deviceList);
 
 private slots:
-    void deviceWasNamed();
-
+    void deviceWasConnected();
 
 private:
-    DeviceManager();
-    ~DeviceManager();
-
     QMap <QTcpSocket*, DeviceObj*> deviceBySocket;
     QMap <QString, DeviceObj*> deviceByName;
 };
